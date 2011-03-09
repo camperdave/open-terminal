@@ -1,0 +1,60 @@
+#!/bin/sh
+
+# Open-Terminal - A shell script to open a new terminal and run a command in it, no matter what operating system
+# by David Lee
+# Created: 03/08/2011
+
+if [ "$#" -eq "0" ]; then
+	echo "Usage: open-terminal <command-to-run>"
+	exit 1
+fi
+
+
+uname | grep -i -q Cygwin
+
+# Cygwin / Windows need to be handled first...
+
+if [ "$?" -eq "0" ]; then
+	#	This unfortunately conflicts with a unix command that we DON'T want to run.
+	start cmd.exe /C $1
+else
+	#       It's a Unix system! I know this!
+	#       This sets up the ability to select which terminal emulator to start up.
+	#       First up, is Mac OSX. Leave it to Apple to make this a pain.
+	type osascript >/dev/null 2>&1
+	if [ "$?" -eq "0" ]; then
+		osascript -e \'tell application "Terminal" to do script $1 \'
+	fi
+
+	#	OK, let's try various specific Linux shells.
+	type gnome-terminal >/dev/null 2>&1
+	if [ "$?" -eq "0" ]; then
+		gnome-terminal -x $1
+		exit 0
+	fi
+	type konsole >/dev/null 2>&1
+	if [ "$?" -eq "0" ]; then
+		konsole -e $1
+		exit 0
+	fi
+	type lxterminal >/dev/null 2>&1
+	if [ "$?" -eq "0" ]; then
+		lxterminal --command=$1
+		exit 0
+	fi
+	#	Next, let's go for the generic ones.
+	type rxvt >/dev/null 2>&1
+	if [ "$?" -eq "0" ]; then
+		rxvt -e $1
+		exit 0
+	fi
+	type xterm >/dev/null 2>&1
+	if [ "$?" -eq "0" ]; then
+		xterm -e $1
+		exit 0
+	fi
+
+	#	Otherwise, just print an error.
+	echo No compatible terminal emulator found...
+	exit 0
+fi
